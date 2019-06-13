@@ -1,0 +1,180 @@
+version: 2
+jobs:
+  checkout_and_install:
+    docker:
+      - image: circleci/node:11.5.0
+    working_directory: ~/protocol
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - v2-dependency-cache-{{ checksum "package.json" }}
+            - v2-dependency-cache-
+      - run:
+          name: Install Dependencies
+          command: npm install --quiet
+      - save_cache:
+          key: v2-dependency-cache-{{ checksum "package.json" }}
+          paths:
+            - node_modules
+      - save_cache:
+          key: protocol-{{ .Environment.CIRCLE_SHA1 }}
+          paths:
+            - ~/protocol
+  build:
+    docker:
+      - image: circleci/node:11.5.0
+    working_directory: ~/protocol
+    steps:
+      - restore_cache:
+          key: protocol-{{ .Environment.CIRCLE_SHA1 }}
+      - run:
+          name: Compile contracts
+          command: ./ci/build.sh
+      - save_cache:
+          key: protocol-completed-build-{{ .Environment.CIRCLE_SHA1 }}
+          paths:
+            - ~/protocol
+  lint:
+    docker:
+      - image: circleci/node:11.5.0
+    working_directory: ~/protocol
+    steps:
+      - restore_cache:
+          key: protocol-{{ .Environment.CIRCLE_SHA1 }}
+      - run:
+          name: Lint
+          command: ./ci/lint.sh
+  docs:
+    docker:
+      - image: circleci/node:11.5.0
+    working_directory: ~/protocol
+    steps:
+      - restore_cache:
+          key: protocol-{{ .Environment.CIRCLE_SHA1 }}
+      - run:
+          name: Generate Docs
+          command: ./ci/docgen.sh
+      - store_artifacts:
+          path: docs
+  slither:
+    docker:
+      - image: trailofbits/eth-security-toolbox
+    working_directory: ~/protocol
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - v2-sec-toolbox-deps-{{ checksum "package.json" }}
+            - v2-sec-toolbox-deps-
+      - run:
+          name: Change user
+          command: sudo su ethsec
+      - run:
+          name: Reclaim ownership
+          command: sudo chown -R $(whoami) ~/.npm
+      - run:
+          name: Install Dependencies
+          command: npm install --quiet
+      - save_cache:
+          key: v2-sec-toolbox-deps-{{ checksum "package.json" }}
+          paths:
+            - node_modules
+      - run:
+          name: Slither
+          command: ./ci/run_slither.sh
+  test:
+    docker:
+      - image: circleci/node:11.5.0
+      - image: trufflesuite/ganache-cli
+        command: ganache-cli -i 1234 -l 6720000
+    working_directory: ~/protocol
+    steps:
+      - restore_cache:
+          key: protocol-completed-build-{{ .Environment.CIRCLE_SHA1 }}
+      - run:
+          name: Run tests
+          command: ./ci/run_truffle_tests.sh
+  coverage:
+    docker:
+      # Note: we made a compromise here to get solidity-coverage to work. We're just creating a new build inside the
+      # trufflesuite/ganache-cli for solidity-coverage. This is because there were issues (not 100% sure about the
+      # cause) with getting solidity-coverage's testrpc to run correctly in the remote image. However, it cannot run
+      # locally without the opened 8545 port that this image has. So the solution we chose was to just run coverage
+      # within that docker image. Caching doesn't seem to work cross-image, so we have to re-checkout the repo and
+      # reinstall deps. We could have also run all the above tests inside this new image. However, we want to ensure
+      # that there is no implicit dependence on the bundled deps or setup inside the trufflesuite/ganache-cli image,
+      # so we want to continue generic testing against the bare node image.
+      # TODO(mrice32): we could probably fix this if we just created our own image on top of the node image that opens
+      # port 8545.
+      - image: trufflesuite/ganache-cli
+    working_directory: ~/protocol
+    steps:
+      - checkout
+      - run:
+          name: Install System Packages
+          command: apk update && apk add make git python g++ curl ca-certificates openssl && update-ca-certificates
+      - restore_cache:
+          keys:
+            - v2-coverage-dependency-cache-{{ checksum "package.json" }}
+            - v2-coverage-dependency-cache-
+      - run:
+          name: Install Dependencies
+          command: npm install --quiet
+      - save_cache:
+          key: v2-coverage-dependency-cache-{{ checksum "package.json" }}
+          paths:
+            - node_modules
+      - run:
+          name: Run coverage
+          command: ./ci/coverage.sh ~/protocol/core
+      - store_artifacts:
+          path: core/coverage
+  echidna:
+    docker:
+      - image: trailofbits/eth-security-toolbox	
+    working_directory: ~/protocol	
+    steps:
+      - checkout	
+      - restore_cache:
+          keys:
+            - v2-sec-toolbox-deps-{{ checksum "package.json" }}
+            - v2-sec-toolbox-deps-
+      - run:
+          name: Change user
+          command: sudo su ethsec
+      - run:
+          name: Reclaim ownership
+          command: sudo chown -R $(whoami) ~/.npm
+      - run:
+          name: Install Dependencies
+          command: npm install --quiet
+      - save_cache:
+          key: v2-sec-toolbox-deps-{{ checksum "package.json" }}
+          paths:
+            - node_modules
+      - run:
+          name: Run Echidna Tests
+          command: ./ci/run_echidna_tests.sh
+
+workflows:
+  version: 2
+  build_and_test:
+    jobs:
+      - checkout_and_install
+      - coverage
+      - slither
+      - echidna
+      - build:
+          requires:
+            - checkout_and_install
+      - lint:
+          requires:
+            - checkout_and_install
+      - test:
+          context: infura
+          requires:
+            - build
+      - docs:
+          requires:
+            - checkout_and_install
