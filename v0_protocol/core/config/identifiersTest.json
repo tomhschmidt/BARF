@@ -1,0 +1,39 @@
+{
+  "BTCETH": {
+    "dappConfig": {
+      "comment": "expiry: January 1st, 2020 12:00 AM UTC, supportedMove: 0.2 corresponds to 20%",
+      "expiry": "1577836800",
+      "supportedMove": "0.2"
+    },
+    "uploaderConfig": {
+      "publishInterval": "900",
+      "numerator": {
+        "dataSource": "Coinbase",
+        "assetName": "BTC"
+      },
+      "denominator": {
+        "dataSource": "Coinbase",
+        "assetName": "ETH"
+      }
+    }
+  },
+  "ZILLOWSFHV": {
+    "dappConfig": {
+      "comment": "expiry: June 13, 2022 7:00AM GMT, supportedMove: 0.1 corresponds to 10%",
+      "expiry": "1655103600",
+      "supportedMove": "0.1"
+    },
+    "uploaderConfig": {
+      "publishInterval": "1",
+      "minDelay": "1",
+      "numerator": {
+        "dataSource": "Zillow",
+        "assetName": "SF"
+      },
+      "denominator": {
+        "dataSource": "Coinbase",
+        "assetName": "ETH-USD"
+      }
+    }
+  }
+}

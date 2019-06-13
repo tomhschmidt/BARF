@@ -1,0 +1,13 @@
+{
+    "extends": "default",
+    "rules": {
+        "indent": ["error", 4],
+        "quotes": ["error", "double"],
+        "max-line-length": ["error", 120],
+        "compiler-fixed": false,
+        "max-states-count": false,
+        "no-simple-event-func-name": false,
+        "function-max-lines": false
+    }
+}
+
