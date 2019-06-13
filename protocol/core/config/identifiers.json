@@ -29,4 +29,19 @@
       }
     }
   }
+  "ZILLOWSFHV": {
+    "dappConfig": {
+      "comment": "expiry: June 13, 2022 7:00AM GMT, supportedMove: 0.1 corresponds to 10%",
+      "expiry": "1655103600",
+      "supportedMove": "0.1"
+    },
+    "uploaderConfig": {
+      "publishInterval": "900",
+      "minDelay": "600",
+      "numerator": {
+        "dataSource": "Zillow",
+        "assetName": "SF"
+      }
+    }
+  }
 }

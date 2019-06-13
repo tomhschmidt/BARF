@@ -36,7 +36,8 @@
     "web3": "1.0.0-beta.37",
     "web3-core-promievent": "1.0.0-beta.37",
     "web3-eth-abi": "1.0.0-beta.37",
-    "web3-utils": "1.0.0-beta.37"
+    "web3-utils": "1.0.0-beta.37",
+    "xlsx": "^0.14.3"
   },
   "optionalDependencies": {
     "solidity-docgen": "github:UMAprotocol/solidity-docgen#master"

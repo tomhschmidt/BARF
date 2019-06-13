@@ -4,6 +4,7 @@ const assert = require("assert");
 const fetch = require("node-fetch");
 const util = require("util");
 const commandlineUtil = require("./CommandlineUtil");
+const xlsx = require('xlsx');
 const identifiers = require("../config/identifiers");
 
 require("dotenv").config();
@@ -32,6 +33,18 @@ const getJson = async url => {
     throw `Query [${url}] failed to get JSON`;
   }
   return json;
+};
+
+// Gets XLS from a URL or throws.
+const getXLS = async url => {
+  const response = await fetch(url);
+  const arrayBuffer = await response.arrayBuffer();
+  const data = new Uint8Array(arrayBuffer);
+  const xls = xlsx.read(data, {type:'buffer'});
+  if (!xls) {
+    throw `Query [${url}] failed to get XLS`;
+  }
+  return xls;
 };
 
 // Gets the current time as BN.
@@ -115,6 +128,27 @@ async function getAlphaVantageCurrencyRate(asset) {
   return { price: rate, timestamp: getCurrentTime() };
 }
 
+// Gets the Zillow Price Index
+async function getZillowPrice(asset) {
+  const url = `https://www.zillow.com/market-report/06-19/20330/san-francisco-ca.xls?rt=6`;
+  console.log(`Querying Zillow`);
+  const xlsOutput = await getXLS(url);
+  console.log(`Zillow response [${xlsOutput}]`);
+  const firstSheetName = xlsOutput.SheetNames[0];
+  const rate = xlsOutput[firstSheetName]['D4'];
+  if (!rate) {
+    throw "Failed to get valid price out of XLS response";
+  }
+  const parsedRate = rate.v;
+  if (!parsedRate) {
+    throw "Failed to get valid price out of XLS response";
+  }
+  console.log(`Retrieved rate [${parsedRate}] from Zillow for asset [${asset}]`);
+  return { price: parsedRate, timestamp: getCurrentTime() };
+}
+
+
+
 async function fetchPrice(assetConfig) {
   switch (assetConfig.dataSource) {
     case "Barchart":
@@ -125,6 +159,8 @@ async function fetchPrice(assetConfig) {
       return await getAlphaVantageCurrencyRate(assetConfig.assetName);
     case "Coinbase":
       return await getCoinbasePrice(assetConfig.assetName);
+    case "Zillow" :
+      return await getZillowPrice(assetConfig.assetName);
     default:
       throw `Unknown dataSource [${value.uploaderConfig.dataSource}]`;
   }
