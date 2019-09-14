@@ -116,6 +116,7 @@ class CreateContractModal extends React.Component {
     };
 
     const { TokenizedDerivativeCreator } = drizzle.contracts;
+    console.log(constructorParams);
     TokenizedDerivativeCreator.methods.createTokenizedDerivative.cacheSend(constructorParams, { from: account });
 
     // TODO: Add error handling and delay closing the modal until there's confirmation

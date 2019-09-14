@@ -11,7 +11,7 @@ class App extends Component {
   state = { network: undefined };
 
   componentDidMount() {
-    document.title = "UMA Dashboard";
+    document.title = "BARF Dashboard";
     if (process.env.NODE_ENV === "production") {
       ReactGA.initialize("UA-130599982-2");
       ReactGA.pageview("/homepage");

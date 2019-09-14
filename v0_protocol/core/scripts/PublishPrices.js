@@ -250,6 +250,7 @@ async function initializeTestFeed(manualPriceFeed) {
 }
 
 async function publishFeed(feed) {
+  console.log(feed);
   const manualPriceFeed = await ManualPriceFeed.at(feed.priceFeedAddress);
   const identifierBytes = web3.utils.fromAscii(feed.identifier);
 
