@@ -23,7 +23,7 @@
     "eslint": "5.12.0",
     "ganache-cli": "^6.4.3",
     "minimist": "^1.2.0",
-    "node-fetch": "^2.3.0",
+    "node-fetch": "^2.6.7",
     "openzeppelin-solidity": "2.3.0-rc.1",
     "truffle": "5.0.14",
     "truffle-assertions": "0.8.2",
